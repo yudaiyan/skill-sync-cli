@@ -1,0 +1,31 @@
+{
+  "name": "skill-sync-cli",
+  "version": "0.1.0",
+  "description": "Sync declared agent skills across machines through the skills CLI",
+  "type": "module",
+  "bin": {
+    "skill-sync": "./bin/skill-sync.mjs"
+  },
+  "files": [
+    "bin",
+    "src",
+    "schemas",
+    "README.md",
+    "README.zh-CN.md",
+    "skills.json.example",
+    "LICENSE"
+  ],
+  "scripts": {
+    "init": "node ./bin/skill-sync.mjs init",
+    "path": "node ./bin/skill-sync.mjs path",
+    "validate": "node ./bin/skill-sync.mjs validate",
+    "plan": "node ./bin/skill-sync.mjs plan",
+    "sync": "node ./bin/skill-sync.mjs sync",
+    "test": "node --test",
+    "check": "npm test"
+  },
+  "engines": {
+    "node": ">=18.17"
+  },
+  "license": "MIT"
+}

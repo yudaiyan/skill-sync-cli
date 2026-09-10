@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "skill-sync manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "skills"],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "cli": {
+      "$ref": "#/$defs/cli"
+    },
+    "defaults": {
+      "$ref": "#/$defs/defaults"
+    },
+    "skills": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/skill"
+      }
+    }
+  },
+  "$defs": {
+    "cli": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "package": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 }
+      }
+    },
+    "defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "agents": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "scope": { "enum": ["global", "project"] },
+        "copy": { "type": "boolean" }
+      }
+    },
+    "skill": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "source"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "source": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 },
+        "ref": { "type": "string", "minLength": 1 },
+        "enabled": { "type": "boolean" },
+        "agents": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "scope": { "enum": ["global", "project"] },
+        "copy": { "type": "boolean" }
+      }
+    }
+  }
+}
