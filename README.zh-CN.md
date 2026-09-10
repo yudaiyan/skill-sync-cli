@@ -4,23 +4,23 @@
 
 ## 开始使用
 
-需要 Node.js 18.17+、npm 和 Git。脚本使用 Node.js 内置模块，无需先安装项目依赖。首次执行安装时，npx 会下载清单指定版本的 `skills` CLI。
+需要 Node.js 18.17+、npm 和 Git。首次运行时，npx 会获取本工具；执行安装时，再获取清单指定版本的 `skills` CLI。
 
-在本项目目录运行：
+发布到 npm 后，可以在任意目录运行以下命令。首个版本发布前，使用下文的[源码或本地安装包](#发布前使用)。
 
 ```bash
 # 新环境：创建初始清单；如果已有清单，跳过这一步
-npm run init
+npx skill-sync-cli init
 
 # 查看配置文件的位置
-npm run path
+npx skill-sync-cli path
 
 # 编辑清单后检查格式并预览安装命令
-npm run validate
-npm run plan
+npx skill-sync-cli validate
+npx skill-sync-cli plan
 
 # 批量安装已启用的 Skills
-npm run sync
+npx skill-sync-cli sync
 ```
 
 配置文件固定在用户目录中：
@@ -28,7 +28,7 @@ npm run sync
 - Windows：`%USERPROFILE%\.config\skill-sync\skills.json`
 - macOS / Linux：`~/.config/skill-sync/skills.json`
 
-`init` 默认保留已有文件。如果确实要用示例覆盖当前清单，可以运行 `npm run init -- --force`。
+创建后，编辑这个文件填写自己常用的 Skills。`init` 默认保留已有文件；如果确实要用示例覆盖当前清单，可以运行 `npx skill-sync-cli init --force`。
 
 ## 清单格式
 
@@ -96,32 +96,57 @@ npx --yes skills@1.5.22 add vercel-labs/skills --agent opencode --skill find-ski
 只预览，或者在单个 Skill 失败后继续处理其他条目：
 
 ```bash
-npm run sync -- --dry-run
-npm run sync -- --continue-on-error
+npx skill-sync-cli sync --dry-run
+npx skill-sync-cli sync --continue-on-error
 ```
 
 默认遇到安装失败就停止并返回非零退出码。使用 `--continue-on-error` 后会继续执行，其间发生失败仍返回非零退出码。
 
-`npm run sync` 的工作目录是本项目目录。如果需要把 `scope: "project"` 的 Skills 安装到另一个项目，请在目标项目目录调用脚本的绝对路径，例如：
-
-```powershell
-node "C:\Users\test\skill-sync-cli\bin\skill-sync.mjs" sync
-```
+使用 `scope: "project"` 时，在目标项目目录运行 `npx skill-sync-cli sync`，Skills 就会安装到该项目下。
 
 ## 在新电脑上使用
 
-1. 获取这个项目，安装 Node.js、npm 和 Git。
+1. 安装 Node.js、npm 和 Git。
 2. 把保存的 `skills.json` 放到该电脑的 `~/.config/skill-sync/skills.json`。
-3. 在项目目录运行 `npm run plan` 查看清单，再运行 `npm run sync` 安装。
+3. 运行 `npx skill-sync-cli plan` 查看清单，再运行 `npx skill-sync-cli sync` 安装。
 
 清单是这个脚本定义的格式；脚本读取后逐项调用官方 `skills` CLI。上游的 `.skill-lock.json` 继续由官方 CLI 维护。
 
-## 验证
+## 发布前使用
+
+获取项目源码后，可以在源码目录直接运行，无需安装项目依赖：
+
+```bash
+npm run init
+npm run plan
+npm run sync
+```
+
+`npm run sync` 的工作目录是本项目目录。如果清单采用项目安装范围，需要在目标项目目录运行脚本的绝对路径：
+
+```powershell
+node "C:\path\to\skill-sync-cli\bin\skill-sync.mjs" sync
+```
+
+生成并验证可分发的安装包：
 
 ```bash
 npm run check
+npm run test:package
 ```
 
-测试覆盖清单解析、批量执行行为和 npx 启动，不需要安装真实 Skills。
+命令会生成 `dist/skill-sync-cli-0.1.0.tgz` 和验证报告 `dist/package-check.json`。安装包验证通过真实 npx 命令离线执行，使用临时用户目录和全新的 npm 缓存，检查初始化、配置、预览和错误处理。验证结束后清理临时环境，保留安装包及报告。
+
+也可以直接用 npx 运行安装包。请把路径替换为安装包的实际绝对路径：
+
+```powershell
+npx --yes --package "C:\path\to\skill-sync-cli-0.1.0.tgz" skill-sync-cli --help
+npx --yes --package "C:\path\to\skill-sync-cli-0.1.0.tgz" skill-sync-cli init
+npx --yes --package "C:\path\to\skill-sync-cli-0.1.0.tgz" skill-sync-cli plan
+```
+
+这些手动命令使用正常的用户配置目录。
+
+维护者发布流程见 [RELEASING.md](RELEASING.md)。从源码运行 `npm publish` 时，会自动执行单元测试和安装包验证。
 
 参考：[skills 官方文档](https://github.com/vercel-labs/skills)、[示例清单](skills.json.example)、[JSON Schema](schemas/skills-sync.schema.json)。

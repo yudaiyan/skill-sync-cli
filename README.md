@@ -10,11 +10,14 @@ installation, and per-agent linking remain delegated to `npx skills`.
 
 ## Quick Start
 
-Requires Node.js 18.17+, npm, and Git. From this checkout, create the user-level
-manifest (no project dependency installation is needed):
+Requires Node.js 18.17+, npm, and Git. Once this package is published to npm,
+run these commands from any directory. Before the first release, use
+[a source checkout or local package](#run-before-the-first-release).
+
+Create your manifest:
 
 ```bash
-npm run init
+npx skill-sync-cli init
 ```
 
 This creates:
@@ -24,35 +27,32 @@ Windows:   %USERPROFILE%/.config/skill-sync/skills.json
 macOS/Linux: ~/.config/skill-sync/skills.json
 ```
 
-Preview the commands:
+Edit this file to list your skills, then preview the installation commands:
 
 ```bash
-npm run plan
+npx skill-sync-cli plan
 ```
 
 Sync the skills:
 
 ```bash
-npm run sync
+npx skill-sync-cli sync
 ```
 
 Validate without downloading:
 
 ```bash
-npm run validate
+npx skill-sync-cli validate
 ```
 
 Show which file will be used:
 
 ```bash
-npm run path
+npx skill-sync-cli path
 ```
 
-The package can also be run from a checked-out clone:
-
-```bash
-node ./bin/skill-sync.mjs sync
-```
+`init` preserves an existing manifest. Use `npx skill-sync-cli init --force`
+when you intend to replace it with the sample.
 
 ## Configuration
 
@@ -71,11 +71,11 @@ project manifest or an environment-variable override.
 Commands:
 
 ```bash
-npm run init
-npm run sync
-npm run plan
-npm run validate
-npm run path
+npx skill-sync-cli init
+npx skill-sync-cli sync
+npx skill-sync-cli plan
+npx skill-sync-cli validate
+npx skill-sync-cli path
 ```
 
 The `npx skills` package itself does not discover these files. This wrapper
@@ -166,7 +166,7 @@ repository or a private setup repository. On each machine, restore that file
 to the same path and run:
 
 ```bash
-npm run sync
+npx skill-sync-cli sync
 ```
 
 The `skills` CLI will also maintain its own local lock files for update
@@ -175,8 +175,8 @@ installed; it is intentionally separate from those machine-local state files.
 
 Sync reinstalls enabled entries and can overwrite installed skills with the same
 name. Removing or disabling an entry does not uninstall it. By default a failure
-stops the batch; `npm run sync -- --continue-on-error` attempts the remaining
-entries and still exits with a failure status. Use `npm run sync -- --dry-run` to
+stops the batch; `npx skill-sync-cli sync --continue-on-error` attempts the remaining
+entries and still exits with a failure status. Use `npx skill-sync-cli sync --dry-run` to
 preview without installing.
 
 For project-scoped skills, set:
@@ -189,9 +189,46 @@ For project-scoped skills, set:
 }
 ```
 
-Project scope uses the command's working directory. `npm run sync` runs in this
-package's directory; to install into another project, run
-`node /absolute/path/to/skill-sync-cli/bin/skill-sync.mjs sync` from that project.
+Project scope uses the command's working directory. Run
+`npx skill-sync-cli sync` from the project where you want the skills installed.
+
+## Run Before the First Release
+
+From a source checkout, the following commands work without installing project
+dependencies:
+
+```bash
+npm run init
+npm run plan
+npm run sync
+```
+
+`npm run sync` runs in this package's directory. For project scope in another
+directory, run `node /absolute/path/to/skill-sync-cli/bin/skill-sync.mjs sync`
+from the target project.
+
+To verify the packaged CLI before publishing:
+
+```bash
+npm run check
+npm run test:package
+```
+
+This creates `dist/skill-sync-cli-0.1.0.tgz` and `dist/package-check.json`. The
+package check runs real npx commands offline, with a temporary home directory
+and a fresh npm cache. It verifies initialization, configuration, previews, and
+error handling, then removes the temporary environment. The archive and report
+remain in `dist/`.
+
+You can run that archive directly. Replace the path with its absolute location:
+
+```bash
+npx --yes --package /absolute/path/skill-sync-cli-0.1.0.tgz skill-sync-cli --help
+npx --yes --package /absolute/path/skill-sync-cli-0.1.0.tgz skill-sync-cli init
+npx --yes --package /absolute/path/skill-sync-cli-0.1.0.tgz skill-sync-cli plan
+```
+
+These manual commands use your normal user configuration directory.
 
 ## Security
 
@@ -202,6 +239,10 @@ the manifest. Prefer trusted repositories, HTTPS, and immutable commit refs.
 ## Development
 
 ```bash
-npm test
 npm run check
+npm run test:package
 ```
+
+See [the release notes for maintainers](RELEASING.md) for the planned repository,
+package details, and publication procedure. `npm publish` runs both checks through
+`prepublishOnly`.

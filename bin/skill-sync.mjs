@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { createRequire } from "node:module"
 import {
   initCommand,
   planCommand,
@@ -8,18 +9,19 @@ import {
 } from "../src/commands.mjs"
 import { configPath } from "../src/config.mjs"
 
-const VERSION = "0.1.0"
+const { name: COMMAND_NAME, version: VERSION } = createRequire(import.meta.url)("../package.json")
 function help() {
-  console.log(`skill-sync ${VERSION}
+  console.log(`${COMMAND_NAME} ${VERSION}
 
 Sync skills declared in a JSON manifest by delegating downloads to npx skills.
 
 Usage:
-  skill-sync sync [options]
-  skill-sync plan
-  skill-sync validate
-  skill-sync path
-  skill-sync init [--force]
+  npx ${COMMAND_NAME} <command> [options]
+  ${COMMAND_NAME} sync [options]
+  ${COMMAND_NAME} plan
+  ${COMMAND_NAME} validate
+  ${COMMAND_NAME} path
+  ${COMMAND_NAME} init [--force]
 
 Options:
   --dry-run               Print commands without downloading anything
@@ -29,10 +31,10 @@ Options:
   -v, --version           Show the version
 
 Examples:
-  node ./bin/skill-sync.mjs init
-  node ./bin/skill-sync.mjs path
-  npm run plan
-  npm run sync
+  npx ${COMMAND_NAME} init
+  npx ${COMMAND_NAME} path
+  npx ${COMMAND_NAME} plan
+  npx ${COMMAND_NAME} sync
 `)
 }
 
@@ -116,6 +118,6 @@ try {
   const code = await main()
   process.exitCode = code
 } catch (error) {
-  console.error(`skill-sync: ${error.message}`)
+  console.error(`${COMMAND_NAME}: ${error.message}`)
   process.exitCode = 1
 }

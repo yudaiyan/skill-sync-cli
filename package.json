@@ -2,9 +2,19 @@
   "name": "skill-sync-cli",
   "version": "0.1.0",
   "description": "Sync declared agent skills across machines through the skills CLI",
+  "author": "wkh",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yudaiyan/skill-sync-cli.git"
+  },
+  "homepage": "https://github.com/yudaiyan/skill-sync-cli#readme",
+  "bugs": {
+    "url": "https://github.com/yudaiyan/skill-sync-cli/issues"
+  },
+  "keywords": ["skills", "agent-skills", "cli", "dotfiles", "opencode", "codex"],
   "type": "module",
   "bin": {
-    "skill-sync": "./bin/skill-sync.mjs"
+    "skill-sync-cli": "bin/skill-sync.mjs"
   },
   "files": [
     "bin",
@@ -12,6 +22,7 @@
     "schemas",
     "README.md",
     "README.zh-CN.md",
+    "RELEASING.md",
     "skills.json.example",
     "LICENSE"
   ],
@@ -22,7 +33,13 @@
     "plan": "node ./bin/skill-sync.mjs plan",
     "sync": "node ./bin/skill-sync.mjs sync",
     "test": "node --test",
-    "check": "npm test"
+    "check": "npm test",
+    "test:package": "node ./scripts/verify-package.mjs",
+    "prepublishOnly": "npm run check && npm run test:package"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "engines": {
     "node": ">=18.17"
