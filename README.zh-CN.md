@@ -23,12 +23,30 @@ npx skill-sync-cli plan
 npx skill-sync-cli sync
 ```
 
-配置文件固定在用户目录中：
+默认配置文件位于用户目录中：
 
 - Windows：`%USERPROFILE%\.config\skill-sync\skills.json`
 - macOS / Linux：`~/.config/skill-sync/skills.json`
 
 创建后，编辑这个文件填写自己常用的 Skills。`init` 默认保留已有文件；如果确实要用示例覆盖当前清单，可以运行 `npx skill-sync-cli init --force`。
+
+## 指定配置文件
+
+所有命令都支持 `--config <文件路径>`，可以直接使用独立 Git 仓库里的清单：
+
+```bash
+npx skill-sync-cli init --config ./my-skills/skills.json
+npx skill-sync-cli validate --config ./my-skills/skills.json
+npx skill-sync-cli plan --config ./my-skills/skills.json
+npx skill-sync-cli sync --config ./my-skills/skills.json
+npx skill-sync-cli path --config ./my-skills/skills.json
+```
+
+也支持 `-c <文件路径>` 和 `--config=文件路径`，参数可以放在子命令前或后。相对路径以运行命令的目录为基准，支持绝对路径和 `~/`；包含空格的路径需要加引号。
+
+`path` 显示本次选中的绝对路径。`init` 会创建所需的父目录，已有文件需要显式加 `--force` 才能覆盖。读取时，如果指定文件不存在或内容无效，命令会报错。
+
+每次使用仓库清单时都传入 `--config`；省略时使用默认用户配置。远程配置仓库先用 Git 克隆到本机，再把本地 JSON 文件路径交给这个参数。
 
 ## 清单格式
 
@@ -102,13 +120,44 @@ npx skill-sync-cli sync --continue-on-error
 
 默认遇到安装失败就停止并返回非零退出码。使用 `--continue-on-error` 后会继续执行，其间发生失败仍返回非零退出码。
 
-使用 `scope: "project"` 时，在目标项目目录运行 `npx skill-sync-cli sync`，Skills 就会安装到该项目下。
+使用 `scope: "project"` 时，安装目标是运行命令的目录，与清单所在目录相互独立。在目标应用项目目录运行：
 
-## 在新电脑上使用
+```bash
+npx skill-sync-cli sync --config /path/to/my-skills/skills.json
+```
 
-1. 安装 Node.js、npm 和 Git。
-2. 把保存的 `skills.json` 放到该电脑的 `~/.config/skill-sync/skills.json`。
-3. 运行 `npx skill-sync-cli plan` 查看清单，再运行 `npx skill-sync-cli sync` 安装。
+## 用独立 Git 仓库跨机器同步
+
+先创建一个保存配置的仓库，并生成清单：
+
+```bash
+git init -b main my-skills
+npx skill-sync-cli init --config ./my-skills/skills.json
+```
+
+编辑 `my-skills/skills.json` 后提交：
+
+```bash
+git -C my-skills add skills.json
+git -C my-skills commit -m "chore: add skill manifest"
+```
+
+把这个仓库推送到自己的 Git 托管平台。其他电脑安装 Node.js、npm 和 Git 后，克隆配置仓库并直接使用其中的清单。请替换下面的示例地址：
+
+```bash
+git clone https://github.com/YOUR_NAME/my-skills.git my-skills
+npx skill-sync-cli plan --config ./my-skills/skills.json
+npx skill-sync-cli sync --config ./my-skills/skills.json
+```
+
+以后修改清单并提交、推送后，在已经克隆仓库的电脑上执行：
+
+```bash
+git -C my-skills pull --ff-only
+npx skill-sync-cli sync --config ./my-skills/skills.json
+```
+
+Git 负责在机器之间传递清单，`sync` 根据本地清单安装 Skills。每台电脑可以把配置仓库放在不同目录，通过 `--config` 指向对应文件。
 
 清单是这个脚本定义的格式；脚本读取后逐项调用官方 `skills` CLI。上游的 `.skill-lock.json` 继续由官方 CLI 维护。
 
@@ -120,6 +169,12 @@ npx skill-sync-cli sync --continue-on-error
 npm run init
 npm run plan
 npm run sync
+```
+
+通过 npm 脚本指定配置时，把参数放在 `--` 后面：
+
+```bash
+npm run plan -- --config ../my-skills/skills.json
 ```
 
 `npm run sync` 的工作目录是本项目目录。如果清单采用项目安装范围，需要在目标项目目录运行脚本的绝对路径：
@@ -135,7 +190,7 @@ npm run check
 npm run test:package
 ```
 
-命令会生成 `dist/skill-sync-cli-0.1.0.tgz` 和验证报告 `dist/package-check.json`。安装包验证通过真实 npx 命令离线执行，使用临时用户目录和全新的 npm 缓存，检查初始化、配置、预览和错误处理。验证结束后清理临时环境，保留安装包及报告。
+命令会生成 `dist/skill-sync-cli-0.1.0.tgz` 和验证报告 `dist/package-check.json`。安装包验证通过真实 npx 命令离线执行，使用临时用户目录和全新的 npm 缓存，检查初始化、外部清单、预览和错误处理。验证结束后清理临时环境，保留安装包及报告。
 
 也可以直接用 npx 运行安装包。请把路径替换为安装包的实际绝对路径：
 
@@ -145,7 +200,7 @@ npx --yes --package "C:\path\to\skill-sync-cli-0.1.0.tgz" skill-sync-cli init
 npx --yes --package "C:\path\to\skill-sync-cli-0.1.0.tgz" skill-sync-cli plan
 ```
 
-这些手动命令使用正常的用户配置目录。
+这些手动命令默认使用正常的用户配置目录。使用仓库清单时，在子命令后加上 `--config "C:\path\to\my-skills\skills.json"`。
 
 维护者发布流程见 [RELEASING.md](RELEASING.md)。从源码运行 `npm publish` 时，会自动执行单元测试和安装包验证。
 

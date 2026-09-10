@@ -9,7 +9,8 @@
 | 命令入口 | `npx skill-sync-cli`；安装后的可执行命令为 `skill-sync-cli` |
 | 计划 GitHub 仓库 | `https://github.com/yudaiyan/skill-sync-cli` |
 | 默认上游 CLI | `skills@1.5.22` |
-| 配置位置 | `~/.config/skill-sync/skills.json` |
+| 默认配置位置 | `~/.config/skill-sync/skills.json` |
+| 仓库清单 | `--config /path/to/my-skills/skills.json`，也支持 `-c` |
 
 2026-09-10 检查时，npm 公共注册表对 `skill-sync-cli` 返回 404，未查询到已发布的同名包；最终能否发布以 npm 的校验结果为准。GitHub CLI 登录账号为 `yudaiyan`，该账号下尚未查询到 `skill-sync-cli` 仓库。`package.json` 的仓库、主页和问题反馈地址按这个计划地址准备，创建仓库后生效。
 

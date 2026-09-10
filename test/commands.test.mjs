@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
 import os from "node:os"
 import path from "node:path"
 import { initCommand, syncCommand } from "../src/commands.mjs"
@@ -37,14 +37,16 @@ const batch = [
   { name: "last", source: "owner/repo" },
 ]
 
-test("sync skips disabled entries and uses the requested working directory", async (t) => {
+test("sync skips disabled entries and forwards a separate project directory", async (t) => {
   const { root, filename } = await manifestFixture(t, batch)
+  const project = path.join(root, "application")
+  await mkdir(project)
   const installed = []
   const code = await syncCommand(filename, {
-    cwd: root,
+    cwd: project,
     run(command, options) {
       installed.push(command.args[command.args.indexOf("--skill") + 1])
-      assert.equal(options.cwd, root)
+      assert.equal(options.cwd, project)
       return { status: 0 }
     },
   })

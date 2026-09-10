@@ -54,10 +54,13 @@ npx skill-sync-cli path
 `init` preserves an existing manifest. Use `npx skill-sync-cli init --force`
 when you intend to replace it with the sample.
 
+To keep the manifest in its own Git repository, use
+`npx skill-sync-cli sync --config ./my-skills/skills.json`.
+See [the cross-machine workflow](#cross-machine-workflow).
+
 ## Configuration
 
-`skill-sync-cli` reads exactly one manifest. The location is fixed for the
-current user:
+`skill-sync-cli` reads one manifest per invocation. The default location is:
 
 ```text
 Windows:     %USERPROFILE%/.config/skill-sync/skills.json
@@ -65,21 +68,31 @@ macOS/Linux: ~/.config/skill-sync/skills.json
 ```
 
 On Windows, this normally resolves to
-`C:\Users\<user>\.config\skill-sync\skills.json`. The command never reads a
-project manifest or an environment-variable override.
+`C:\Users\<user>\.config\skill-sync\skills.json`.
 
-Commands:
+Use `--config <file>` (or `-c <file>`) to select a local JSON file for any command:
 
 ```bash
-npx skill-sync-cli init
-npx skill-sync-cli sync
-npx skill-sync-cli plan
-npx skill-sync-cli validate
-npx skill-sync-cli path
+npx skill-sync-cli init --config ./my-skills/skills.json
+npx skill-sync-cli validate --config ./my-skills/skills.json
+npx skill-sync-cli plan --config ./my-skills/skills.json
+npx skill-sync-cli sync --config ./my-skills/skills.json
+npx skill-sync-cli path --config ./my-skills/skills.json
 ```
 
+The option can appear before or after the command; `--config=path` also works.
+Relative paths resolve from the working directory, absolute paths work as given,
+and a leading `~/` expands to your home directory. Quote paths containing spaces.
+`path` prints the selected absolute filename. `init` creates its parent directories
+and preserves existing files unless `--force` is supplied.
+
+Pass `--config` each time you want to use that manifest. Omitting it selects the
+default user file. An explicit missing or invalid file produces an error when
+reading; it never falls back to another manifest. Clone a remote configuration
+repository first, then pass the path to its local JSON file.
+
 The `npx skills` package itself does not discover these files. This wrapper
-reads the fixed user manifest, then delegates each installation to `npx skills`.
+reads the selected manifest, then delegates each installation to `npx skills`.
 
 ## Manifest
 
@@ -161,13 +174,39 @@ Disabled entries remain in the manifest but are skipped by `sync`.
 
 ## Cross-Machine Workflow
 
-Keep the contents of `~/.config/skill-sync/skills.json` in a private dotfiles
-repository or a private setup repository. On each machine, restore that file
-to the same path and run:
+Create a dedicated configuration repository and initialize its manifest:
 
 ```bash
-npx skill-sync-cli sync
+git init -b main my-skills
+npx skill-sync-cli init --config ./my-skills/skills.json
 ```
+
+Edit `my-skills/skills.json`, then save it in Git:
+
+```bash
+git -C my-skills add skills.json
+git -C my-skills commit -m "chore: add skill manifest"
+```
+
+Push this repository to your Git hosting service. On another machine, install
+Node.js, npm, and Git, then clone the configuration repository and use its file
+directly. Replace the example URL with your repository:
+
+```bash
+git clone https://github.com/YOUR_NAME/my-skills.git my-skills
+npx skill-sync-cli plan --config ./my-skills/skills.json
+npx skill-sync-cli sync --config ./my-skills/skills.json
+```
+
+After committing and pushing future manifest edits, update each existing clone:
+
+```bash
+git -C my-skills pull --ff-only
+npx skill-sync-cli sync --config ./my-skills/skills.json
+```
+
+Git transfers the manifest between machines; `sync` installs the skills declared
+in the local file. Each machine can clone the repository into a different folder.
 
 The `skills` CLI will also maintain its own local lock files for update
 tracking. This tool's manifest is the portable declaration of what should be
@@ -189,8 +228,12 @@ For project-scoped skills, set:
 }
 ```
 
-Project scope uses the command's working directory. Run
-`npx skill-sync-cli sync` from the project where you want the skills installed.
+Project scope uses the command's working directory, independently of the manifest
+location. From the target application project, run:
+
+```bash
+npx skill-sync-cli sync --config /path/to/my-skills/skills.json
+```
 
 ## Run Before the First Release
 
@@ -201,6 +244,12 @@ dependencies:
 npm run init
 npm run plan
 npm run sync
+```
+
+To select a manifest with an npm script, forward the option after `--`:
+
+```bash
+npm run plan -- --config ../my-skills/skills.json
 ```
 
 `npm run sync` runs in this package's directory. For project scope in another
@@ -216,7 +265,7 @@ npm run test:package
 
 This creates `dist/skill-sync-cli-0.1.0.tgz` and `dist/package-check.json`. The
 package check runs real npx commands offline, with a temporary home directory
-and a fresh npm cache. It verifies initialization, configuration, previews, and
+and a fresh npm cache. It verifies initialization, external manifests, previews, and
 error handling, then removes the temporary environment. The archive and report
 remain in `dist/`.
 
@@ -228,7 +277,9 @@ npx --yes --package /absolute/path/skill-sync-cli-0.1.0.tgz skill-sync-cli init
 npx --yes --package /absolute/path/skill-sync-cli-0.1.0.tgz skill-sync-cli plan
 ```
 
-These manual commands use your normal user configuration directory.
+These manual commands use your normal user configuration directory. To select a
+repository manifest, append `--config /path/to/my-skills/skills.json` after the
+subcommand.
 
 ## Security
 

@@ -163,6 +163,35 @@ try {
     assert.ok(!existsSync(path.join(sandboxHome, ".agents")))
     assert.ok(!existsSync(path.join(sandboxHome, ".config", "opencode", "skills")))
   })
+
+  const repositoryManifest = path.join(sandboxRoot, "config repo", "skills.json")
+  const relativeManifest = path.relative(sandboxProject, repositoryManifest)
+  const originalUserConfig = await readFile(configFilename, "utf8")
+  await check("init --config creates a repository manifest without changing user configuration", async () => {
+    run(["init", "--config", relativeManifest])
+    assert.equal(JSON.parse(await readFile(repositoryManifest, "utf8")).version, 1)
+    assert.equal(await readFile(configFilename, "utf8"), originalUserConfig)
+  })
+  await check("external config options work before and after subcommands", () => {
+    assert.equal(run(["--config", repositoryManifest, "path"]), repositoryManifest)
+    assert.equal(run(["path", "-c", relativeManifest]), repositoryManifest)
+    assert.match(run([`--config=${relativeManifest}`, "validate"]), /Valid manifest:/)
+  })
+  await check("plan and dry-run read the repository manifest independently of the user file", async () => {
+    const manifest = JSON.parse(await readFile(repositoryManifest, "utf8"))
+    manifest.defaults.scope = "project"
+    manifest.skills[0].description = "Repository configuration check"
+    await writeFile(repositoryManifest, JSON.stringify(manifest))
+    assert.match(run(["plan", "--config", relativeManifest]), /Repository configuration check/)
+    const output = run(["sync", "--dry-run", "--config", relativeManifest])
+    assert.match(output, /--skill find-skills/)
+    assert.doesNotMatch(output, /--global\b/)
+    assert.equal(await readFile(configFilename, "utf8"), originalUserConfig)
+  })
+  await check("an explicit missing manifest produces a failure", () => {
+    run(["validate", "--config", path.join(sandboxRoot, "missing.json")], 1)
+    run(["init", "--config"], 1)
+  })
   await check("the installed skill-sync-cli executable works through explicit package selection", () => {
     assert.equal(invoke(npxCli, ["--offline", "--yes", "--package", archive, "skill-sync-cli", "--version"], {
       cwd: sandboxProject, env: sandboxEnv,

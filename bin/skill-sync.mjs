@@ -7,7 +7,7 @@ import {
   syncCommand,
   validateCommand,
 } from "../src/commands.mjs"
-import { configPath } from "../src/config.mjs"
+import { resolveConfigPath } from "../src/config.mjs"
 
 const { name: COMMAND_NAME, version: VERSION } = createRequire(import.meta.url)("../package.json")
 function help() {
@@ -18,15 +18,16 @@ Sync skills declared in a JSON manifest by delegating downloads to npx skills.
 Usage:
   npx ${COMMAND_NAME} <command> [options]
   ${COMMAND_NAME} sync [options]
-  ${COMMAND_NAME} plan
-  ${COMMAND_NAME} validate
-  ${COMMAND_NAME} path
-  ${COMMAND_NAME} init [--force]
+  ${COMMAND_NAME} plan [options]
+  ${COMMAND_NAME} validate [options]
+  ${COMMAND_NAME} path [options]
+  ${COMMAND_NAME} init [options]
 
 Options:
+  -c, --config <file>      Use this JSON manifest (relative or absolute path)
   --dry-run               Print commands without downloading anything
   --continue-on-error     Continue after a skill installation fails
-  --force                 Replace the user config with init
+  --force                 Replace the selected manifest with init
   -h, --help              Show this help
   -v, --version           Show the version
 
@@ -35,6 +36,11 @@ Examples:
   npx ${COMMAND_NAME} path
   npx ${COMMAND_NAME} plan
   npx ${COMMAND_NAME} sync
+  npx ${COMMAND_NAME} init --config ./my-skills/skills.json
+  npx ${COMMAND_NAME} sync --config ./my-skills/skills.json
+
+Without --config, use ~/.config/skill-sync/skills.json.
+Relative config paths and project installations use the current working directory.
 `)
 }
 
@@ -58,6 +64,16 @@ function parseArgs(argv) {
       options.continueOnError = true
     } else if (arg === "--force") {
       options.force = true
+    } else if (arg === "--config" || arg === "-c" || arg.startsWith("--config=")) {
+      if (options.configFile !== undefined) {
+        throw new Error("Specify --config only once")
+      }
+      const inline = arg.startsWith("--config=")
+      const value = inline ? arg.slice("--config=".length) : argv[++index]
+      if (value === undefined || value.trim() === "" || (!inline && value.startsWith("-"))) {
+        throw new Error("--config requires a file path")
+      }
+      options.configFile = value
     } else if (arg.startsWith("-")) {
       throw new Error(`Unknown option: ${arg}`)
     } else {
@@ -69,21 +85,10 @@ function parseArgs(argv) {
 }
 
 async function main() {
-  const argv = process.argv.slice(2)
-  const command = argv[0] ?? "help"
+  const options = parseArgs(process.argv.slice(2))
+  const command = options.positional[0] ?? "help"
 
-  if (command === "--help" || command === "-h") {
-    help()
-    return 0
-  }
-  if (command === "--version" || command === "-v") {
-    console.log(VERSION)
-    return 0
-  }
-
-  const options = parseArgs(argv.slice(1))
-
-  if (options.help || command === "help") {
+  if (options.help) {
     help()
     return 0
   }
@@ -92,11 +97,15 @@ async function main() {
     return 0
   }
 
-  if (options.positional.length > 0) {
-    throw new Error(`Unexpected argument: ${options.positional[0]}`)
+  if (command === "help") {
+    help()
+    return 0
+  }
+  if (options.positional.length > 1) {
+    throw new Error(`Unexpected argument: ${options.positional[1]}`)
   }
 
-  const filename = configPath()
+  const filename = resolveConfigPath(options.configFile)
   if (command === "init") {
     return initCommand(filename, options)
   }
