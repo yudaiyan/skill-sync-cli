@@ -10,17 +10,17 @@
 
 ```bash
 # 新环境：创建初始清单；如果已有清单，跳过这一步
-npx skill-sync-cli init
+npx @wangkh/skill-sync-cli init
 
 # 查看配置文件的位置
-npx skill-sync-cli path
+npx @wangkh/skill-sync-cli path
 
 # 编辑清单后检查格式并预览安装命令
-npx skill-sync-cli validate
-npx skill-sync-cli plan
+npx @wangkh/skill-sync-cli validate
+npx @wangkh/skill-sync-cli plan
 
 # 批量安装已启用的 Skills
-npx skill-sync-cli sync
+npx @wangkh/skill-sync-cli sync
 ```
 
 默认配置文件位于用户目录中：
@@ -28,18 +28,18 @@ npx skill-sync-cli sync
 - Windows：`%USERPROFILE%\.config\skill-sync\skills.json`
 - macOS / Linux：`~/.config/skill-sync/skills.json`
 
-创建后，编辑这个文件填写自己常用的 Skills。`init` 默认保留已有文件；如果确实要用示例覆盖当前清单，可以运行 `npx skill-sync-cli init --force`。
+创建后，编辑这个文件填写自己常用的 Skills。`init` 默认保留已有文件；如果确实要用示例覆盖当前清单，可以运行 `npx @wangkh/skill-sync-cli init --force`。
 
 ## 指定配置文件
 
 所有命令都支持 `--config <文件路径>`，可以直接使用独立 Git 仓库里的清单：
 
 ```bash
-npx skill-sync-cli init --config ./my-skills/skills.json
-npx skill-sync-cli validate --config ./my-skills/skills.json
-npx skill-sync-cli plan --config ./my-skills/skills.json
-npx skill-sync-cli sync --config ./my-skills/skills.json
-npx skill-sync-cli path --config ./my-skills/skills.json
+npx @wangkh/skill-sync-cli init --config ./my-skills/skills.json
+npx @wangkh/skill-sync-cli validate --config ./my-skills/skills.json
+npx @wangkh/skill-sync-cli plan --config ./my-skills/skills.json
+npx @wangkh/skill-sync-cli sync --config ./my-skills/skills.json
+npx @wangkh/skill-sync-cli path --config ./my-skills/skills.json
 ```
 
 也支持 `-c <文件路径>` 和 `--config=文件路径`，参数可以放在子命令前或后。相对路径以运行命令的目录为基准，支持绝对路径和 `~/`；包含空格的路径需要加引号。
@@ -114,8 +114,8 @@ npx --yes skills@1.5.22 add vercel-labs/skills --agent opencode --skill find-ski
 只预览，或者在单个 Skill 失败后继续处理其他条目：
 
 ```bash
-npx skill-sync-cli sync --dry-run
-npx skill-sync-cli sync --continue-on-error
+npx @wangkh/skill-sync-cli sync --dry-run
+npx @wangkh/skill-sync-cli sync --continue-on-error
 ```
 
 默认遇到安装失败就停止并返回非零退出码。使用 `--continue-on-error` 后会继续执行，其间发生失败仍返回非零退出码。
@@ -123,7 +123,7 @@ npx skill-sync-cli sync --continue-on-error
 使用 `scope: "project"` 时，安装目标是运行命令的目录，与清单所在目录相互独立。在目标应用项目目录运行：
 
 ```bash
-npx skill-sync-cli sync --config /path/to/my-skills/skills.json
+npx @wangkh/skill-sync-cli sync --config /path/to/my-skills/skills.json
 ```
 
 ## 用独立 Git 仓库跨机器同步
@@ -132,7 +132,7 @@ npx skill-sync-cli sync --config /path/to/my-skills/skills.json
 
 ```bash
 git init -b main my-skills
-npx skill-sync-cli init --config ./my-skills/skills.json
+npx @wangkh/skill-sync-cli init --config ./my-skills/skills.json
 ```
 
 编辑 `my-skills/skills.json` 后提交：
@@ -146,15 +146,15 @@ git -C my-skills commit -m "chore: add skill manifest"
 
 ```bash
 git clone https://github.com/YOUR_NAME/my-skills.git my-skills
-npx skill-sync-cli plan --config ./my-skills/skills.json
-npx skill-sync-cli sync --config ./my-skills/skills.json
+npx @wangkh/skill-sync-cli plan --config ./my-skills/skills.json
+npx @wangkh/skill-sync-cli sync --config ./my-skills/skills.json
 ```
 
 以后修改清单并提交、推送后，在已经克隆仓库的电脑上执行：
 
 ```bash
 git -C my-skills pull --ff-only
-npx skill-sync-cli sync --config ./my-skills/skills.json
+npx @wangkh/skill-sync-cli sync --config ./my-skills/skills.json
 ```
 
 Git 负责在机器之间传递清单，`sync` 根据本地清单安装 Skills。每台电脑可以把配置仓库放在不同目录，通过 `--config` 指向对应文件。
@@ -190,14 +190,14 @@ npm run check
 npm run test:package
 ```
 
-命令会生成 `dist/skill-sync-cli-0.1.0.tgz` 和验证报告 `dist/package-check.json`。安装包验证通过真实 npx 命令离线执行，使用临时用户目录和全新的 npm 缓存，检查初始化、外部清单、预览和错误处理。验证结束后清理临时环境，保留安装包及报告。
+命令会生成 `dist/wangkh-skill-sync-cli-0.1.0.tgz` 和验证报告 `dist/package-check.json`。安装包验证通过真实 npx 命令离线执行，使用临时用户目录和全新的 npm 缓存，检查初始化、外部清单、预览和错误处理。验证结束后清理临时环境，保留安装包及报告。
 
 也可以直接用 npx 运行安装包。请把路径替换为安装包的实际绝对路径：
 
 ```powershell
-npx --yes --package "C:\path\to\skill-sync-cli-0.1.0.tgz" skill-sync-cli --help
-npx --yes --package "C:\path\to\skill-sync-cli-0.1.0.tgz" skill-sync-cli init
-npx --yes --package "C:\path\to\skill-sync-cli-0.1.0.tgz" skill-sync-cli plan
+npx --yes --package "C:\path\to\wangkh-skill-sync-cli-0.1.0.tgz" skill-sync-cli --help
+npx --yes --package "C:\path\to\wangkh-skill-sync-cli-0.1.0.tgz" skill-sync-cli init
+npx --yes --package "C:\path\to\wangkh-skill-sync-cli-0.1.0.tgz" skill-sync-cli plan
 ```
 
 这些手动命令默认使用正常的用户配置目录。使用仓库清单时，在子命令后加上 `--config "C:\path\to\my-skills\skills.json"`。

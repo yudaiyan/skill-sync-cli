@@ -17,7 +17,7 @@ run these commands from any directory. Before the first release, use
 Create your manifest:
 
 ```bash
-npx skill-sync-cli init
+npx @wangkh/skill-sync-cli init
 ```
 
 This creates:
@@ -30,32 +30,32 @@ macOS/Linux: ~/.config/skill-sync/skills.json
 Edit this file to list your skills, then preview the installation commands:
 
 ```bash
-npx skill-sync-cli plan
+npx @wangkh/skill-sync-cli plan
 ```
 
 Sync the skills:
 
 ```bash
-npx skill-sync-cli sync
+npx @wangkh/skill-sync-cli sync
 ```
 
 Validate without downloading:
 
 ```bash
-npx skill-sync-cli validate
+npx @wangkh/skill-sync-cli validate
 ```
 
 Show which file will be used:
 
 ```bash
-npx skill-sync-cli path
+npx @wangkh/skill-sync-cli path
 ```
 
-`init` preserves an existing manifest. Use `npx skill-sync-cli init --force`
+`init` preserves an existing manifest. Use `npx @wangkh/skill-sync-cli init --force`
 when you intend to replace it with the sample.
 
 To keep the manifest in its own Git repository, use
-`npx skill-sync-cli sync --config ./my-skills/skills.json`.
+`npx @wangkh/skill-sync-cli sync --config ./my-skills/skills.json`.
 See [the cross-machine workflow](#cross-machine-workflow).
 
 ## Configuration
@@ -73,11 +73,11 @@ On Windows, this normally resolves to
 Use `--config <file>` (or `-c <file>`) to select a local JSON file for any command:
 
 ```bash
-npx skill-sync-cli init --config ./my-skills/skills.json
-npx skill-sync-cli validate --config ./my-skills/skills.json
-npx skill-sync-cli plan --config ./my-skills/skills.json
-npx skill-sync-cli sync --config ./my-skills/skills.json
-npx skill-sync-cli path --config ./my-skills/skills.json
+npx @wangkh/skill-sync-cli init --config ./my-skills/skills.json
+npx @wangkh/skill-sync-cli validate --config ./my-skills/skills.json
+npx @wangkh/skill-sync-cli plan --config ./my-skills/skills.json
+npx @wangkh/skill-sync-cli sync --config ./my-skills/skills.json
+npx @wangkh/skill-sync-cli path --config ./my-skills/skills.json
 ```
 
 The option can appear before or after the command; `--config=path` also works.
@@ -178,7 +178,7 @@ Create a dedicated configuration repository and initialize its manifest:
 
 ```bash
 git init -b main my-skills
-npx skill-sync-cli init --config ./my-skills/skills.json
+npx @wangkh/skill-sync-cli init --config ./my-skills/skills.json
 ```
 
 Edit `my-skills/skills.json`, then save it in Git:
@@ -194,15 +194,15 @@ directly. Replace the example URL with your repository:
 
 ```bash
 git clone https://github.com/YOUR_NAME/my-skills.git my-skills
-npx skill-sync-cli plan --config ./my-skills/skills.json
-npx skill-sync-cli sync --config ./my-skills/skills.json
+npx @wangkh/skill-sync-cli plan --config ./my-skills/skills.json
+npx @wangkh/skill-sync-cli sync --config ./my-skills/skills.json
 ```
 
 After committing and pushing future manifest edits, update each existing clone:
 
 ```bash
 git -C my-skills pull --ff-only
-npx skill-sync-cli sync --config ./my-skills/skills.json
+npx @wangkh/skill-sync-cli sync --config ./my-skills/skills.json
 ```
 
 Git transfers the manifest between machines; `sync` installs the skills declared
@@ -214,8 +214,8 @@ installed; it is intentionally separate from those machine-local state files.
 
 Sync reinstalls enabled entries and can overwrite installed skills with the same
 name. Removing or disabling an entry does not uninstall it. By default a failure
-stops the batch; `npx skill-sync-cli sync --continue-on-error` attempts the remaining
-entries and still exits with a failure status. Use `npx skill-sync-cli sync --dry-run` to
+stops the batch; `npx @wangkh/skill-sync-cli sync --continue-on-error` attempts the remaining
+entries and still exits with a failure status. Use `npx @wangkh/skill-sync-cli sync --dry-run` to
 preview without installing.
 
 For project-scoped skills, set:
@@ -232,7 +232,7 @@ Project scope uses the command's working directory, independently of the manifes
 location. From the target application project, run:
 
 ```bash
-npx skill-sync-cli sync --config /path/to/my-skills/skills.json
+npx @wangkh/skill-sync-cli sync --config /path/to/my-skills/skills.json
 ```
 
 ## Run Before the First Release
@@ -263,7 +263,7 @@ npm run check
 npm run test:package
 ```
 
-This creates `dist/skill-sync-cli-0.1.0.tgz` and `dist/package-check.json`. The
+This creates `dist/wangkh-skill-sync-cli-0.1.0.tgz` and `dist/package-check.json`. The
 package check runs real npx commands offline, with a temporary home directory
 and a fresh npm cache. It verifies initialization, external manifests, previews, and
 error handling, then removes the temporary environment. The archive and report
@@ -272,9 +272,9 @@ remain in `dist/`.
 You can run that archive directly. Replace the path with its absolute location:
 
 ```bash
-npx --yes --package /absolute/path/skill-sync-cli-0.1.0.tgz skill-sync-cli --help
-npx --yes --package /absolute/path/skill-sync-cli-0.1.0.tgz skill-sync-cli init
-npx --yes --package /absolute/path/skill-sync-cli-0.1.0.tgz skill-sync-cli plan
+npx --yes --package /absolute/path/wangkh-skill-sync-cli-0.1.0.tgz skill-sync-cli --help
+npx --yes --package /absolute/path/wangkh-skill-sync-cli-0.1.0.tgz skill-sync-cli init
+npx --yes --package /absolute/path/wangkh-skill-sync-cli-0.1.0.tgz skill-sync-cli plan
 ```
 
 These manual commands use your normal user configuration directory. To select a

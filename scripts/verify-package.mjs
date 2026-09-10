@@ -103,8 +103,8 @@ try {
 
   await check("npx infers the package executable and displays help", () => {
     const output = run(["--help"])
-    assert.match(output, /^skill-sync-cli /)
-    assert.match(output, /npx skill-sync-cli <command>/)
+    assert.ok(output.startsWith(`${metadata.name} `))
+    assert.ok(output.includes(`npx ${metadata.name} <command>`))
     assert.doesNotMatch(output, /^\s*skill-sync(?:\s|:)/m)
   })
   await check("CLI version matches package.json", () => {
