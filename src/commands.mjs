@@ -11,6 +11,7 @@ import {
   runCommand,
   statusCode,
 } from "./runner.mjs"
+import { downloadManifest } from "./remote.mjs"
 
 const SAMPLE_MANIFEST = {
   version: 1,
@@ -109,7 +110,7 @@ export async function syncCommand(manifestFilename, options = {}) {
   return 0
 }
 
-export async function initCommand(manifestFilename, { force = false } = {}) {
+export async function initCommand(manifestFilename, { force = false, from, fetchImpl } = {}) {
   const filename = path.resolve(manifestFilename)
   if (!force) {
     try {
@@ -120,12 +121,25 @@ export async function initCommand(manifestFilename, { force = false } = {}) {
     }
   }
 
+  let text = `${JSON.stringify(SAMPLE_MANIFEST, null, 2)}\n`
+  let source
+  if (from !== undefined) {
+    const downloaded = await downloadManifest(from, { fetchImpl })
+    source = downloaded.url
+    try {
+      normalizeManifest(JSON.parse(downloaded.text))
+    } catch (error) {
+      throw new Error(`Remote manifest at ${source} is invalid: ${error.message}`)
+    }
+    text = downloaded.text.endsWith("\n") ? downloaded.text : `${downloaded.text}\n`
+  }
+
   await mkdir(path.dirname(filename), { recursive: true })
-  await writeFile(filename, `${JSON.stringify(SAMPLE_MANIFEST, null, 2)}\n`, {
+  await writeFile(filename, text, {
     encoding: "utf8",
     flag: force ? "w" : "wx",
   })
-  console.log(`Created ${filename}`)
+  console.log(source ? `Created ${filename} from ${source}` : `Created ${filename}`)
   return 0
 }
 

@@ -91,6 +91,18 @@ default user file. An explicit missing or invalid file produces an error when
 reading; it never falls back to another manifest. Clone a remote configuration
 repository first, then pass the path to its local JSON file.
 
+To bootstrap from a manifest that is already published online, pass its file URL
+to `init --from`. Gitee and GitHub `blob` page URLs are converted to raw file
+URLs automatically, and the download is validated before anything is written:
+
+```bash
+npx @wangkh/skill-sync-cli init --from https://gitee.com/ai_1024/skill-sync/blob/main/skills.json
+npx @wangkh/skill-sync-cli init --from https://gitee.com/ai_1024/skill-sync/blob/main/skills.json --config ./my-skills/skills.json
+```
+
+Without `--config`, the manifest is written to the default user location;
+existing files still require `--force`.
+
 The `npx skills` package itself does not discover these files. This wrapper
 reads the selected manifest, then delegates each installation to `npx skills`.
 
@@ -197,6 +209,9 @@ git clone https://github.com/YOUR_NAME/my-skills.git my-skills
 npx @wangkh/skill-sync-cli plan --config ./my-skills/skills.json
 npx @wangkh/skill-sync-cli sync --config ./my-skills/skills.json
 ```
+
+You can skip the clone and initialize directly from the published file URL with
+`npx @wangkh/skill-sync-cli init --from <url>`.
 
 After committing and pushing future manifest edits, update each existing clone:
 

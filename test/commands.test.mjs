@@ -1,5 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
+import { existsSync } from "node:fs"
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
 import os from "node:os"
 import path from "node:path"
@@ -99,4 +100,40 @@ test("sync checks every command before starting any installation", async (t) => 
   await assert.rejects(syncCommand(filename, {
     run() { assert.fail("invalid plan must not start an installation") },
   }), /already contains a ref/)
+})
+
+test("init downloads a remote manifest and validates it before writing", async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "skill-sync-remote-"))
+  const filename = path.join(root, "remote.json")
+  const remoteText = JSON.stringify({
+    version: 1,
+    skills: [{ name: "remote-skill", source: "owner/repo" }],
+  })
+  const fetchImpl = async () => ({ ok: true, status: 200, text: async () => remoteText })
+
+  try {
+    assert.equal(
+      await initCommand(filename, { from: "https://example.com/skills.json", fetchImpl }),
+      0,
+    )
+    assert.equal(JSON.parse(await readFile(filename, "utf8")).skills[0].name, "remote-skill")
+    await assert.rejects(
+      initCommand(filename, { from: "https://example.com/skills.json", fetchImpl }),
+      /already exists/,
+    )
+
+    const invalid = path.join(root, "invalid.json")
+    await assert.rejects(initCommand(invalid, {
+      from: "https://example.com/bad.json",
+      fetchImpl: async () => ({ ok: true, status: 200, text: async () => "{\"version\": 2}" }),
+    }), /Remote manifest at .* is invalid/)
+    assert.ok(!existsSync(invalid))
+
+    await assert.rejects(initCommand(path.join(root, "missing.json"), {
+      from: "https://example.com/missing.json",
+      fetchImpl: async () => ({ ok: false, status: 404 }),
+    }), /HTTP 404/)
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
 })

@@ -48,6 +48,15 @@ npx @wangkh/skill-sync-cli path --config ./my-skills/skills.json
 
 每次使用仓库清单时都传入 `--config`；省略时使用默认用户配置。远程配置仓库先用 Git 克隆到本机，再把本地 JSON 文件路径交给这个参数。
 
+如果清单已经发布在 Gitee 或 GitHub 上，可以用 `init --from` 直接按链接初始化；`blob` 页面链接会自动转换为 raw 文件地址，下载后会先校验清单格式再写入：
+
+```bash
+npx @wangkh/skill-sync-cli init --from https://gitee.com/ai_1024/skill-sync/blob/main/skills.json
+npx @wangkh/skill-sync-cli init --from https://gitee.com/ai_1024/skill-sync/blob/main/skills.json --config ./my-skills/skills.json
+```
+
+不传 `--config` 时，清单写入默认用户配置位置；目标文件已存在时仍需显式加 `--force`。
+
 ## 清单格式
 
 ```json
@@ -149,6 +158,8 @@ git clone https://github.com/YOUR_NAME/my-skills.git my-skills
 npx @wangkh/skill-sync-cli plan --config ./my-skills/skills.json
 npx @wangkh/skill-sync-cli sync --config ./my-skills/skills.json
 ```
+
+也可以不克隆，直接用 `npx @wangkh/skill-sync-cli init --from <文件链接>` 按链接初始化。
 
 以后修改清单并提交、推送后，在已经克隆仓库的电脑上执行：
 

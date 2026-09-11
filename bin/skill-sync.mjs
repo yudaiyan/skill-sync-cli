@@ -25,6 +25,7 @@ Usage:
 
 Options:
   -c, --config <file>      Use this JSON manifest (relative or absolute path)
+  --from <url>             Initialize from a remote manifest URL (init only)
   --dry-run               Print commands without downloading anything
   --continue-on-error     Continue after a skill installation fails
   --force                 Replace the selected manifest with init
@@ -38,6 +39,7 @@ Examples:
   npx ${COMMAND_NAME} sync
   npx ${COMMAND_NAME} init --config ./my-skills/skills.json
   npx ${COMMAND_NAME} sync --config ./my-skills/skills.json
+  npx ${COMMAND_NAME} init --from https://gitee.com/ai_1024/skill-sync/blob/main/skills.json
 
 Without --config, use ~/.config/skill-sync/skills.json.
 Relative config paths and project installations use the current working directory.
@@ -74,6 +76,16 @@ function parseArgs(argv) {
         throw new Error("--config requires a file path")
       }
       options.configFile = value
+    } else if (arg === "--from" || arg.startsWith("--from=")) {
+      if (options.from !== undefined) {
+        throw new Error("Specify --from only once")
+      }
+      const inline = arg.startsWith("--from=")
+      const value = inline ? arg.slice("--from=".length) : argv[++index]
+      if (value === undefined || value.trim() === "" || (!inline && value.startsWith("-"))) {
+        throw new Error("--from requires a URL")
+      }
+      options.from = value
     } else if (arg.startsWith("-")) {
       throw new Error(`Unknown option: ${arg}`)
     } else {
@@ -103,6 +115,9 @@ async function main() {
   }
   if (options.positional.length > 1) {
     throw new Error(`Unexpected argument: ${options.positional[1]}`)
+  }
+  if (options.from !== undefined && command !== "init") {
+    throw new Error("--from is only supported by init")
   }
 
   const filename = resolveConfigPath(options.configFile)

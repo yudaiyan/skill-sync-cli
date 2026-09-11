@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
-import { spawnSync } from "node:child_process"
+import { spawn, spawnSync } from "node:child_process"
 import { existsSync } from "node:fs"
+import { createServer } from "node:http"
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
 import os from "node:os"
 import path from "node:path"
@@ -25,6 +26,41 @@ function invoke(cli, args, { cwd = projectRoot, env = process.env, status = 0 } 
   if (result.error) throw result.error
   assert.equal(result.status, status, `${args.join(" ")}\n${result.stdout}\n${result.stderr}`)
   return result.stdout.trim()
+}
+
+// Async variant so an in-process HTTP server can serve the child process.
+function invokeAsync(cli, args, { cwd = projectRoot, env = process.env, status = 0, timeout = 30000 } = {}) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, [cli, ...args], {
+      cwd,
+      env,
+      stdio: ["ignore", "pipe", "pipe"],
+      windowsHide: true,
+    })
+    let stdout = ""
+    let stderr = ""
+    const timer = setTimeout(() => {
+      child.kill()
+      reject(new Error(`Timeout: ${args.join(" ")}`))
+    }, timeout)
+    child.stdout.setEncoding("utf8")
+    child.stderr.setEncoding("utf8")
+    child.stdout.on("data", (chunk) => { stdout += chunk })
+    child.stderr.on("data", (chunk) => { stderr += chunk })
+    child.on("error", (error) => {
+      clearTimeout(timer)
+      reject(error)
+    })
+    child.on("close", (code) => {
+      clearTimeout(timer)
+      try {
+        assert.equal(code, status, `${args.join(" ")}\n${stdout}\n${stderr}`)
+        resolve(stdout.trim())
+      } catch (error) {
+        reject(error)
+      }
+    })
+  })
 }
 
 const checks = []
@@ -61,6 +97,7 @@ await check("archive includes the CLI, runtime modules, schema, examples, and do
 
 // Spaces in the path also exercise npx's handling of Windows user directories.
 const sandboxRoot = await mkdtemp(path.join(os.tmpdir(), "skill sync package-"))
+let remoteServer = null
 try {
   const sandboxHome = path.join(sandboxRoot, "user")
   const sandboxProject = path.join(sandboxRoot, "project")
@@ -192,12 +229,44 @@ try {
     run(["validate", "--config", path.join(sandboxRoot, "missing.json")], 1)
     run(["init", "--config"], 1)
   })
+
+  const remoteManifest = path.join(sandboxRoot, "remote-manifest.json")
+  await check("init --from downloads a remote manifest and validates it", async () => {
+    const body = JSON.stringify({
+      version: 1,
+      skills: [{ name: "remote-skill", source: "owner/repo", description: "Remote check" }],
+    })
+    remoteServer = createServer((request, response) => {
+      if (request.url === "/skills.json") {
+        response.writeHead(200, { "content-type": "application/json" })
+        response.end(body)
+      } else {
+        response.writeHead(404)
+        response.end()
+      }
+    })
+    await new Promise((resolve) => remoteServer.listen(0, "127.0.0.1", resolve))
+    const origin = `http://127.0.0.1:${remoteServer.address().port}`
+    const invokeArchive = (args, status = 0) =>
+      invokeAsync(npxCli, ["--offline", "--yes", archiveSpec, ...args], { cwd: sandboxProject, env: sandboxEnv, status })
+
+    const output = await invokeArchive(["init", "--from", `${origin}/skills.json`, "--config", remoteManifest])
+    assert.match(output, /Created /)
+    assert.equal(JSON.parse(await readFile(remoteManifest, "utf8")).skills[0].name, "remote-skill")
+    assert.match(await invokeArchive(["plan", "--config", remoteManifest]), /--skill remote-skill/)
+
+    const missing = path.join(sandboxRoot, "remote-missing.json")
+    await invokeArchive(["init", "--from", `${origin}/missing.json`, "--config", missing], 1)
+    assert.ok(!existsSync(missing))
+  })
+
   await check("the installed skill-sync-cli executable works through explicit package selection", () => {
     assert.equal(invoke(npxCli, ["--offline", "--yes", "--package", archive, "skill-sync-cli", "--version"], {
       cwd: sandboxProject, env: sandboxEnv,
     }), metadata.version)
   })
 } finally {
+  if (remoteServer) remoteServer.close()
   await rm(sandboxRoot, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 })
 }
 
