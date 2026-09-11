@@ -201,14 +201,14 @@ npm run check
 npm run test:package
 ```
 
-命令会生成 `dist/wangkh-skill-sync-cli-0.1.0.tgz` 和验证报告 `dist/package-check.json`。安装包验证通过真实 npx 命令离线执行，使用临时用户目录和全新的 npm 缓存，检查初始化、外部清单、预览和错误处理。验证结束后清理临时环境，保留安装包及报告。
+命令会生成 `dist/wangkh-skill-sync-cli-0.2.0.tgz` 和验证报告 `dist/package-check.json`。安装包验证通过真实 npx 命令离线执行，使用临时用户目录和全新的 npm 缓存，检查初始化、外部清单、预览和错误处理。验证结束后清理临时环境，保留安装包及报告。
 
 也可以直接用 npx 运行安装包。请把路径替换为安装包的实际绝对路径：
 
 ```powershell
-npx --yes --package "C:\path\to\wangkh-skill-sync-cli-0.1.0.tgz" skill-sync-cli --help
-npx --yes --package "C:\path\to\wangkh-skill-sync-cli-0.1.0.tgz" skill-sync-cli init
-npx --yes --package "C:\path\to\wangkh-skill-sync-cli-0.1.0.tgz" skill-sync-cli plan
+npx --yes --package "C:\path\to\wangkh-skill-sync-cli-0.2.0.tgz" skill-sync-cli --help
+npx --yes --package "C:\path\to\wangkh-skill-sync-cli-0.2.0.tgz" skill-sync-cli init
+npx --yes --package "C:\path\to\wangkh-skill-sync-cli-0.2.0.tgz" skill-sync-cli plan
 ```
 
 这些手动命令默认使用正常的用户配置目录。使用仓库清单时，在子命令后加上 `--config "C:\path\to\my-skills\skills.json"`。

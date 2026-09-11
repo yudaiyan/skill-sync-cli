@@ -278,7 +278,7 @@ npm run check
 npm run test:package
 ```
 
-This creates `dist/wangkh-skill-sync-cli-0.1.0.tgz` and `dist/package-check.json`. The
+This creates `dist/wangkh-skill-sync-cli-0.2.0.tgz` and `dist/package-check.json`. The
 package check runs real npx commands offline, with a temporary home directory
 and a fresh npm cache. It verifies initialization, external manifests, previews, and
 error handling, then removes the temporary environment. The archive and report
@@ -287,9 +287,9 @@ remain in `dist/`.
 You can run that archive directly. Replace the path with its absolute location:
 
 ```bash
-npx --yes --package /absolute/path/wangkh-skill-sync-cli-0.1.0.tgz skill-sync-cli --help
-npx --yes --package /absolute/path/wangkh-skill-sync-cli-0.1.0.tgz skill-sync-cli init
-npx --yes --package /absolute/path/wangkh-skill-sync-cli-0.1.0.tgz skill-sync-cli plan
+npx --yes --package /absolute/path/wangkh-skill-sync-cli-0.2.0.tgz skill-sync-cli --help
+npx --yes --package /absolute/path/wangkh-skill-sync-cli-0.2.0.tgz skill-sync-cli init
+npx --yes --package /absolute/path/wangkh-skill-sync-cli-0.2.0.tgz skill-sync-cli plan
 ```
 
 These manual commands use your normal user configuration directory. To select a
