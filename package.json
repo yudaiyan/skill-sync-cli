@@ -1,6 +1,6 @@
 {
   "name": "@wangkh/skill-sync-cli",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Sync declared agent skills across machines through the skills CLI",
   "author": "wkh",
   "repository": {
@@ -11,7 +11,14 @@
   "bugs": {
     "url": "https://github.com/yudaiyan/skill-sync-cli/issues"
   },
-  "keywords": ["skills", "agent-skills", "cli", "dotfiles", "opencode", "codex"],
+  "keywords": [
+    "skills",
+    "agent-skills",
+    "cli",
+    "dotfiles",
+    "opencode",
+    "codex"
+  ],
   "type": "module",
   "bin": {
     "skill-sync-cli": "bin/skill-sync.mjs"
