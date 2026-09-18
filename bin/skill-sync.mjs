@@ -28,7 +28,8 @@ Options:
   --from <url>             Initialize from a remote manifest URL (init only)
   --dry-run               Print commands without downloading anything
   --continue-on-error     Continue after a skill installation fails
-  --force                 Replace the selected manifest with init
+  --retries <n>           Retry each failed install up to n times (default 2)
+  --force                 Replace the selected manifest with init, or reinstall with sync
   -h, --help              Show this help
   -v, --version           Show the version
 
@@ -64,6 +65,16 @@ function parseArgs(argv) {
       options.dryRun = true
     } else if (arg === "--continue-on-error") {
       options.continueOnError = true
+    } else if (arg === "--retries" || arg.startsWith("--retries=")) {
+      if (options.retries !== undefined) {
+        throw new Error("Specify --retries only once")
+      }
+      const inline = arg.startsWith("--retries=")
+      const value = inline ? arg.slice("--retries=".length) : argv[++index]
+      if (value === undefined || !/^\d+$/.test(value)) {
+        throw new Error("--retries requires a non-negative integer")
+      }
+      options.retries = Number(value)
     } else if (arg === "--force") {
       options.force = true
     } else if (arg === "--config" || arg === "-c" || arg.startsWith("--config=")) {

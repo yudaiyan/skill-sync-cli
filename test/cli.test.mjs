@@ -122,6 +122,26 @@ test("CLI protects an existing selected file and expands a quoted home path", as
   assert.equal(await readFile(defaultFile, "utf8"), defaultBefore)
 })
 
+test("CLI validates the retry count and batches same-source entries in previews", async (t) => {
+  const { project, run } = await fixture(t)
+  assert.match(run(["sync", "--retries", "x", "--dry-run"], 1).stderr, /--retries requires a non-negative integer/)
+  assert.match(run(["sync", "--retries=", "--dry-run"], 1).stderr, /--retries requires a non-negative integer/)
+  assert.match(run(["sync", "--retries", "-1", "--dry-run"], 1).stderr, /--retries requires a non-negative integer/)
+  assert.match(run(["sync", "--retries", "1", "--retries", "2", "--dry-run"], 1).stderr, /only once/)
+
+  const filename = path.join(project, "batched.json")
+  await writeFile(filename, JSON.stringify({
+    version: 1,
+    skills: [
+      { name: "one", source: "owner/repo" },
+      { name: "two", source: "owner/repo" },
+    ],
+  }))
+  const output = run(["sync", "--config", filename, "--dry-run"]).stdout
+  assert.match(output, /--skill one two/)
+  assert.equal(output.match(/--skill/g).length, 1)
+})
+
 test("CLI reports explicit missing, invalid, and remote configurations without falling back", async (t) => {
   const { project, defaultFile, run } = await fixture(t)
   await writeFile(defaultFile, JSON.stringify({

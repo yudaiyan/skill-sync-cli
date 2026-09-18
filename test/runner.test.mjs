@@ -3,7 +3,51 @@ import assert from "node:assert/strict"
 import { mkdtemp, rm, writeFile } from "node:fs/promises"
 import os from "node:os"
 import path from "node:path"
-import { runCommand, statusCode } from "../src/runner.mjs"
+import { commandForGroup, groupSkills, runCommand, statusCode } from "../src/runner.mjs"
+
+const skill = (name, overrides = {}) => ({
+  name,
+  source: "owner/repo",
+  ref: "main",
+  agents: ["opencode"],
+  scope: "global",
+  copy: true,
+  ...overrides,
+})
+
+test("groups skills that share source, ref, agents, scope, and copy", () => {
+  const groups = groupSkills([
+    skill("a"),
+    skill("b"),
+    skill("c", { agents: ["codex"] }),
+    skill("d", { ref: "dev" }),
+    skill("e", { source: "owner/other" }),
+    skill("f", { scope: "project" }),
+    skill("g", { copy: false }),
+  ])
+  assert.deepEqual(
+    groups.map((group) => group.map((entry) => entry.name)),
+    [["a", "b"], ["c"], ["d"], ["e"], ["f"], ["g"]],
+  )
+})
+
+test("builds one command with multiple skill names", () => {
+  const command = commandForGroup([skill("a"), skill("b")], { package: "skills", version: "1.5.22" })
+  assert.deepEqual(command.args, [
+    "--yes",
+    "skills@1.5.22",
+    "add",
+    "owner/repo#main",
+    "--agent",
+    "opencode",
+    "--skill",
+    "a",
+    "b",
+    "--global",
+    "--copy",
+    "--yes",
+  ])
+})
 
 test("starts the installed npx without a shell or network access", () => {
   const result = runCommand({

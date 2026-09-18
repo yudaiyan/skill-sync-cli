@@ -18,20 +18,48 @@ function packageSpec(cli) {
   return `${cli.package}@${cli.version}`
 }
 
-export function commandFor(skill, cli) {
-  const args = ["--yes", packageSpec(cli), "add", sourceWithRef(skill.source, skill.ref)]
+function groupKey(skill) {
+  return JSON.stringify([
+    skill.source,
+    skill.ref ?? null,
+    skill.agents,
+    skill.scope,
+    skill.copy,
+  ])
+}
 
-  for (const agent of skill.agents) {
+// skills add accepts multiple names after one --skill, so entries that share
+// every command-level flag can be installed with a single call (one fetch).
+export function groupSkills(skills) {
+  const groups = new Map()
+  for (const skill of skills) {
+    const key = groupKey(skill)
+    const group = groups.get(key)
+    if (group) group.push(skill)
+    else groups.set(key, [skill])
+  }
+  return [...groups.values()]
+}
+
+export function commandForGroup(skills, cli) {
+  const [{ source, ref, agents, scope, copy }] = skills
+  const args = ["--yes", packageSpec(cli), "add", sourceWithRef(source, ref)]
+
+  for (const agent of agents) {
     args.push("--agent", agent)
   }
 
-  args.push("--skill", skill.name)
+  args.push("--skill", ...skills.map((skill) => skill.name))
 
-  if (skill.scope === "global") args.push("--global")
-  if (skill.copy) args.push("--copy")
+  if (scope === "global") args.push("--global")
+  if (copy) args.push("--copy")
   args.push("--yes")
 
   return { executable: npxExecutable(), args }
+}
+
+export function commandFor(skill, cli) {
+  return commandForGroup([skill], cli)
 }
 
 function quoteForDisplay(value) {

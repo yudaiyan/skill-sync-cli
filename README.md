@@ -233,6 +233,21 @@ stops the batch; `npx @wangkh/skill-sync-cli sync --continue-on-error` attempts 
 entries and still exits with a failure status. Use `npx @wangkh/skill-sync-cli sync --dry-run` to
 preview without installing.
 
+Entries that share `source`, `ref`, `agents`, `scope`, and `copy` are installed
+with a single `skills add` call (`--skill name-a name-b`), so the repository is
+fetched once. When a batched call fails, `sync` falls back to installing each
+entry in that batch individually, which identifies the failing name. Failed
+installs are retried up to `--retries <n>` times (default 2) with a short
+backoff; interruptions are never retried.
+
+`sync` records the installed revision per group in
+`~/.config/skill-sync/state.json`. On later runs it checks the remote with
+`git ls-remote` (immutable commit refs need no check) and skips groups whose
+revision and installed files are unchanged, so unchanged skills are not
+downloaded again. If the update check cannot reach the remote but the previous
+install is still present, the current copy is kept. Use `--force` to reinstall
+regardless.
+
 For project-scoped skills, set:
 
 ```json

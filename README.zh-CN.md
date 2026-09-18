@@ -120,6 +120,10 @@ npx --yes skills@1.5.22 add vercel-labs/skills --agent opencode --skill find-ski
 
 两个 `--yes` 分别用于 npx 下载安装工具和 Skills 安装确认。`sync` 会按清单顺序安装；再次运行会重新安装或更新这些条目，可能覆盖目标位置同名 Skill 的内容。从清单移除或禁用一个条目后，已经安装的内容仍会保留。
 
+`source`、`ref`、`agents`、`scope`、`copy` 相同的多个条目会合并成一次 `skills add`（一个 `--skill` 后跟多个名称），仓库只获取一次。合并安装失败时，会回退为逐个安装，便于定位具体失败的条目。
+
+`sync` 会把每个分组的已安装版本记录在 `~/.config/skill-sync/state.json`。之后的运行会用 `git ls-remote` 检查远端版本（固定为 commit SHA 的 `ref` 无需检查），版本和已安装文件都没有变化时跳过该组，不再重复下载。检查更新失败但本地文件仍然存在时，会保留现有安装。需要强制重装时使用 `--force`。
+
 只预览，或者在单个 Skill 失败后继续处理其他条目：
 
 ```bash
@@ -128,6 +132,8 @@ npx @wangkh/skill-sync-cli sync --continue-on-error
 ```
 
 默认遇到安装失败就停止并返回非零退出码。使用 `--continue-on-error` 后会继续执行，其间发生失败仍返回非零退出码。
+
+失败的安装会自动重试，默认 2 次并带有短暂退避；可以用 `--retries <n>` 调整次数，`--retries 0` 表示不重试。中断信号不会被重试。
 
 使用 `scope: "project"` 时，安装目标是运行命令的目录，与清单所在目录相互独立。在目标应用项目目录运行：
 
