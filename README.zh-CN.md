@@ -124,6 +124,14 @@ npx --yes skills@1.5.22 add vercel-labs/skills --agent opencode --skill find-ski
 
 `sync` 会把每个分组的已安装版本记录在 `~/.config/skill-sync/state.json`。之后的运行会用 `git ls-remote` 检查远端版本（固定为 commit SHA 的 `ref` 无需检查），版本和已安装文件都没有变化时跳过该组，不再重复下载。检查更新失败但本地文件仍然存在时，会保留现有安装。需要强制重装时使用 `--force`。
 
+如果所在网络无法直接访问 GitHub，可以用 `--github-mirror <url>`（或环境变量 `SKILL_SYNC_GITHUB_MIRROR`）让 clone 和版本检查走镜像：
+
+```bash
+npx @wangkh/skill-sync-cli sync --github-mirror https://gh-proxy.com/
+```
+
+镜像通过 git 的 `insteadOf` 重写注入，只对本次命令生效，不会修改全局 git 配置。实测可用的免费公益镜像包括 `https://gh-proxy.com/`、`https://ghproxy.net/`、`https://ghfast.top/`。新机器上如果 `skills` CLI 下载慢，可以配置 npm 镜像源 `https://registry.npmmirror.com`。
+
 只预览，或者在单个 Skill 失败后继续处理其他条目：
 
 ```bash

@@ -33,12 +33,12 @@ export function gitUrlForSource(source) {
   return url.toString()
 }
 
-export function probeRevision(url, ref, { timeoutMs = 10000 } = {}) {
+export function probeRevision(url, ref, { timeoutMs = 10000, env = process.env } = {}) {
   const result = spawnSync("git", ["ls-remote", url, ref ?? "HEAD"], {
     encoding: "utf8",
     timeout: timeoutMs,
     windowsHide: true,
-    env: { ...process.env, GIT_TERMINAL_PROMPT: "0" },
+    env: { ...env, GIT_TERMINAL_PROMPT: "0" },
   })
 
   if (result.error) return { status: "error", message: result.error.message }

@@ -29,6 +29,7 @@ Options:
   --dry-run               Print commands without downloading anything
   --continue-on-error     Continue after a skill installation fails
   --retries <n>           Retry each failed install up to n times (default 2)
+  --github-mirror <url>   Clone GitHub sources through a mirror (sync only)
   --force                 Replace the selected manifest with init, or reinstall with sync
   -h, --help              Show this help
   -v, --version           Show the version
@@ -87,6 +88,16 @@ function parseArgs(argv) {
         throw new Error("--config requires a file path")
       }
       options.configFile = value
+    } else if (arg === "--github-mirror" || arg.startsWith("--github-mirror=")) {
+      if (options.githubMirror !== undefined) {
+        throw new Error("Specify --github-mirror only once")
+      }
+      const inline = arg.startsWith("--github-mirror=")
+      const value = inline ? arg.slice("--github-mirror=".length) : argv[++index]
+      if (value === undefined || value.trim() === "" || (!inline && value.startsWith("-"))) {
+        throw new Error("--github-mirror requires a URL")
+      }
+      options.githubMirror = value
     } else if (arg === "--from" || arg.startsWith("--from=")) {
       if (options.from !== undefined) {
         throw new Error("Specify --from only once")
@@ -143,7 +154,10 @@ async function main() {
   if (command === "validate") return validateCommand(filename)
   if (command === "plan") return planCommand(filename)
   if (command === "sync") {
-    return syncCommand(filename, options)
+    return syncCommand(filename, {
+      ...options,
+      githubMirror: options.githubMirror ?? process.env.SKILL_SYNC_GITHUB_MIRROR,
+    })
   }
 
   throw new Error(`Unknown command: ${command}`)

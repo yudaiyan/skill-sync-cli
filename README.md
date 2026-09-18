@@ -248,6 +248,20 @@ downloaded again. If the update check cannot reach the remote but the previous
 install is still present, the current copy is kept. Use `--force` to reinstall
 regardless.
 
+On networks that cannot reach GitHub directly, pass `--github-mirror <url>`
+(or set `SKILL_SYNC_GITHUB_MIRROR`) to route GitHub clones and update checks
+through a mirror:
+
+```bash
+npx @wangkh/skill-sync-cli sync --github-mirror https://gh-proxy.com/
+```
+
+The mirror is injected as a git `insteadOf` rewrite for the commands this tool
+runs, so your global git configuration is not changed. Free public mirrors seen
+working include `https://gh-proxy.com/`, `https://ghproxy.net/`, and
+`https://ghfast.top/`. To speed up the `skills` CLI download itself on a fresh
+machine, configure an npm registry mirror such as `https://registry.npmmirror.com`.
+
 For project-scoped skills, set:
 
 ```json

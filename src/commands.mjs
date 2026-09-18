@@ -15,6 +15,7 @@ import {
   runCommand,
   statusCode,
 } from "./runner.mjs"
+import { mirrorGitEnv } from "./mirror.mjs"
 import { gitUrlForSource, isCommitSha, probeRevision } from "./revision.mjs"
 import {
   allInstalled,
@@ -87,17 +88,17 @@ function reportFailure(label, result) {
   console.error(`[${label}] failed with exit code ${statusCode(result)}`)
 }
 
-function resolveGroupRevision(skills, probe) {
+function resolveGroupRevision(skills, probe, probeOptions) {
   const { source, ref } = skills[0]
   if (isCommitSha(ref)) return { status: "known", revision: ref.toLowerCase() }
   const url = gitUrlForSource(source)
   if (!url) return { status: "unknown" }
-  return probe(url, ref)
+  return probe(url, ref, probeOptions)
 }
 
-async function runWithRetries(execute, command, { cwd, retries, retryDelayMs, label }) {
+async function runWithRetries(execute, command, { cwd, env, retries, retryDelayMs, label }) {
   for (let attempt = 0; ; attempt += 1) {
-    const result = execute(command, { cwd })
+    const result = execute(command, { cwd, env })
     const code = statusCode(result)
     if (code === 0 || result.signal || attempt >= retries) return result
 
@@ -136,6 +137,7 @@ export async function syncCommand(manifestFilename, options = {}) {
   const home = options.home ?? os.homedir()
   const cwd = options.cwd ?? process.cwd()
   const probe = options.probe ?? probeRevision
+  const gitEnv = mirrorGitEnv(options.githubMirror)
 
   if (skills.length === 0) {
     console.log("No enabled skills.")
@@ -180,7 +182,7 @@ export async function syncCommand(manifestFilename, options = {}) {
     let revision = null
 
     if (!options.force && entry && installedHere) {
-      revision = resolveGroupRevision(group.skills, probe)
+      revision = resolveGroupRevision(group.skills, probe, { env: gitEnv })
       if (revision.status === "known" && entry.revision === revision.revision) {
         console.log(`# unchanged (${revision.revision.slice(0, 7)}); skipping, use --force to reinstall`)
         skipped += 1
@@ -202,6 +204,7 @@ export async function syncCommand(manifestFilename, options = {}) {
       printDescriptions(group.skills)
       const result = await runWithRetries(execute, group.command, {
         cwd: options.cwd,
+        env: gitEnv,
         retries,
         retryDelayMs,
         label: skill.name,
@@ -216,7 +219,7 @@ export async function syncCommand(manifestFilename, options = {}) {
       // A batched command shares one fetch. Since a failure could come from a
       // single bad name or a transient error, retry each entry individually
       // when the batch does not succeed.
-      const batch = execute(group.command, { cwd: options.cwd })
+      const batch = execute(group.command, { cwd: options.cwd, env: gitEnv })
       if (statusCode(batch) !== 0) {
         if (batch.signal) {
           failures += group.skills.length
@@ -228,6 +231,7 @@ export async function syncCommand(manifestFilename, options = {}) {
           for (const skill of group.skills) {
             const result = await runWithRetries(execute, commandFor(skill, manifest.cli), {
               cwd: options.cwd,
+              env: gitEnv,
               retries,
               retryDelayMs,
               label: skill.name,
@@ -247,7 +251,7 @@ export async function syncCommand(manifestFilename, options = {}) {
     }
 
     if (!groupFailed) {
-      if (!revision) revision = resolveGroupRevision(group.skills, probe)
+      if (!revision) revision = resolveGroupRevision(group.skills, probe, { env: gitEnv })
       if (revision.status === "known") {
         setStateEntry(state, filename, key, {
           revision: revision.revision,

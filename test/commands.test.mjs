@@ -346,6 +346,46 @@ test("sync records the revision after a first install without checking first", a
   assert.equal(Object.values(state.manifests[filename])[0].revision, sha("d"))
 })
 
+test("sync applies the GitHub mirror to installs and update checks", async (t) => {
+  const skills = [{ name: "one", source: "owner/repo" }]
+  const { filename, home, cwd, stateFile } = await skipFixture(t, skills, { installed: false })
+  let runEnv
+  let probeEnv
+  const code = await syncCommand(filename, {
+    githubMirror: "https://gh-proxy.com",
+    home,
+    cwd,
+    stateFile,
+    probe(url, ref, options) {
+      probeEnv = options?.env
+      return { status: "unknown" }
+    },
+    run(command, options) {
+      runEnv = options.env
+      return { status: 0 }
+    },
+  })
+  assert.equal(code, 0)
+  for (const env of [runEnv, probeEnv]) {
+    assert.equal(env.GIT_CONFIG_KEY_0, "url.https://gh-proxy.com/https://github.com/.insteadOf")
+    assert.equal(env.GIT_CONFIG_VALUE_0, "https://github.com/")
+  }
+})
+
+test("sync rejects an invalid GitHub mirror before installing", async (t) => {
+  const skills = [{ name: "one", source: "owner/repo" }]
+  const { filename, home, cwd, stateFile } = await skipFixture(t, skills)
+  await assert.rejects(syncCommand(filename, {
+    githubMirror: "ftp://mirror",
+    home,
+    cwd,
+    stateFile,
+    run() {
+      assert.fail("must not run")
+    },
+  }), /http\(s\) URL/)
+})
+
 test("sync --force reinstalls an unchanged group", async (t) => {
   const skills = [{ name: "one", source: "owner/repo" }]
   const { filename, home, cwd, stateFile } = await skipFixture(t, skills, { stateRevision: sha("a") })

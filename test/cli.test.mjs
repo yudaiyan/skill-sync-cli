@@ -32,10 +32,10 @@ async function fixture(t) {
   const assertStatus = (args, code, status, stdout, stderr) =>
     assert.equal(code, status, `${args.join(" ")}\n${stdout}\n${stderr}`)
 
-  const run = (args, status = 0) => {
+  const run = (args, status = 0, envOverride) => {
     const result = spawnSync(process.execPath, [cli, ...args], {
       cwd: project,
-      env,
+      env: envOverride ? { ...env, ...envOverride } : env,
       encoding: "utf8",
       timeout: 10000,
       windowsHide: true,
@@ -140,6 +140,28 @@ test("CLI validates the retry count and batches same-source entries in previews"
   const output = run(["sync", "--config", filename, "--dry-run"]).stdout
   assert.match(output, /--skill one two/)
   assert.equal(output.match(/--skill/g).length, 1)
+})
+
+test("CLI validates the GitHub mirror option and environment value", async (t) => {
+  const { project, defaultFile, run } = await fixture(t)
+  const filename = path.join(project, "mirrored.json")
+  await writeFile(filename, JSON.stringify({
+    version: 1,
+    skills: [{ name: "one", source: "owner/repo" }],
+  }))
+
+  assert.match(run(["sync", "--config", filename, "--dry-run", "--github-mirror", "ftp://mirror"], 1).stderr, /http\(s\) URL/)
+  assert.match(run(["sync", "--config", filename, "--dry-run", "--github-mirror="], 1).stderr, /--github-mirror requires a URL/)
+  assert.match(run(["sync", "--config", filename, "--github-mirror", "https://a", "--github-mirror", "https://b"], 1).stderr, /only once/)
+  assert.match(
+    run(["sync", "--config", filename, "--dry-run"], 1, { SKILL_SYNC_GITHUB_MIRROR: "not-a-url" }).stderr,
+    /Invalid GitHub mirror URL/,
+  )
+  assert.equal(run(["path"], 0, { SKILL_SYNC_GITHUB_MIRROR: "not-a-url" }).stdout.trim(), defaultFile)
+  assert.match(
+    run(["sync", "--config", filename, "--dry-run"], 0, { SKILL_SYNC_GITHUB_MIRROR: "https://gh-proxy.com" }).stdout,
+    /--skill one/,
+  )
 })
 
 test("CLI reports explicit missing, invalid, and remote configurations without falling back", async (t) => {
